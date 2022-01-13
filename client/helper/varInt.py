@@ -1,4 +1,6 @@
 import struct
+from io import BytesIO
+from socket import socket
 
 def write(val):
   total = b''
@@ -26,3 +28,31 @@ def read(s, i):
   if total&(1<<31):
     total = total - (1<<32)
   return (total, cur - i)
+
+def read_from_buffer(bbuff: BytesIO):
+  total = 0
+  shift = 0
+  val = 0x80
+  cur = 0
+  while val&0x80:
+    val = struct.unpack('B', bbuff.read(1))[0]
+    total |= ((val&0x7F)<<shift)
+    shift += 7
+    cur += 1
+  if total&(1<<31):
+    total = total - (1<<32)
+  return (total, cur)
+
+def read_from_socket(sock: socket):
+  total = 0
+  shift = 0
+  val = 0x80
+  cur = 0
+  while val&0x80:
+    val = struct.unpack('B', sock.recv(1))[0]
+    total |= ((val&0x7F)<<shift)
+    shift += 7
+    cur += 1
+  if total&(1<<31):
+    total = total - (1<<32)
+  return (total, cur)
